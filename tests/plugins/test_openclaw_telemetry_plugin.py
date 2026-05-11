@@ -15,6 +15,29 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 PLUGIN_DIR = REPO_ROOT / "plugins" / "observability" / "openclaw_telemetry"
 
 
+@pytest.fixture(autouse=True)
+def isolate_default_spark_env_file(tmp_path, monkeypatch):
+    """Prevent real DEV telemetry env values from leaking into unit tests."""
+    telemetry_keys = (
+        "HERMES_OPENCLAW_TELEMETRY_ENV_FILE",
+        "HERMES_OPENCLAW_TELEMETRY_BASE_URL",
+        "HERMES_OPENCLAW_TELEMETRY_TOKEN",
+        "HERMES_OPENCLAW_TELEMETRY_TIMEOUT_SECONDS",
+        "HERMES_OPENCLAW_CARD_ID",
+        "HERMES_OPENCLAW_RUN_ID",
+        "TELEMETRY_BASE_URL",
+        "TELEMETRY_TOKEN",
+        "TELEMETRY_WRITE_TOKEN",
+    )
+    for key in telemetry_keys:
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "hermes-home"))
+    yield
+    # load_dotenv mutates os.environ directly, outside monkeypatch tracking.
+    for key in telemetry_keys:
+        monkeypatch.delenv(key, raising=False)
+
+
 class TestManifest:
     def test_plugin_directory_exists(self):
         assert PLUGIN_DIR.is_dir()
