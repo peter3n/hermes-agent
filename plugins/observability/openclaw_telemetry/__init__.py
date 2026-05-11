@@ -51,10 +51,11 @@ _ENV_FILE_LOADED = False
 def _load_spark_env_file() -> None:
     """Load DEV Spark telemetry env from a separate, git-ignored file.
 
-    The gateway systemd unit also imports this file when present, but tests and
-    non-systemd launches still need the plugin to discover it before reading
-    config. The default lives under HERMES_HOME so token material never needs to
-    be committed to the repo.
+    The generated gateway systemd unit also imports this file when present, but
+    existing DEV units may not have been regenerated with EnvironmentFile yet.
+    Keep this runtime loading path load-bearing for tests, non-systemd launches,
+    and already-installed services. The default lives under HERMES_HOME so token
+    material never needs to be committed to the repo.
     """
     global _ENV_FILE_LOADED
     if _ENV_FILE_LOADED:
