@@ -31,6 +31,10 @@ class TestManifest:
             "HERMES_OPENCLAW_TELEMETRY_TOKEN",
         ]
         assert set(data["optional_env"]) == {
+            "HERMES_OPENCLAW_TELEMETRY_ENV_FILE",
+            "HERMES_OPENCLAW_TELEMETRY_TIMEOUT_SECONDS",
+            "HERMES_OPENCLAW_CARD_ID",
+            "HERMES_OPENCLAW_RUN_ID",
             "TELEMETRY_BASE_URL",
             "TELEMETRY_TOKEN",
             "TELEMETRY_WRITE_TOKEN",
@@ -90,6 +94,32 @@ class TestRuntimeGate:
         monkeypatch.setenv("TELEMETRY_BASE_URL", "http://control.example:3001/")
         monkeypatch.setenv("TELEMETRY_TOKEN", "operator-token")
         monkeypatch.setenv("HERMES_OPENCLAW_TELEMETRY_TOKEN", "spark-token")
+
+        config = plugin._get_config()
+
+        assert config["endpoint"] == "http://control.example:3001/v1/telemetry/token-usage"
+        assert config["token"] == "spark-token"
+
+    def test_get_config_loads_default_spark_env_file(self, tmp_path, monkeypatch):
+        plugin = self._fresh_plugin()
+        plugin.reset_cache_for_tests()
+        hermes_home = tmp_path / "hermes-home"
+        hermes_home.mkdir()
+        (hermes_home / "spark-telemetry.env").write_text(
+            "HERMES_OPENCLAW_TELEMETRY_BASE_URL=http://control.example:3001\n"
+            "HERMES_OPENCLAW_TELEMETRY_TOKEN=spark-token\n",
+            encoding="utf-8",
+        )
+        for key in (
+            "HERMES_OPENCLAW_TELEMETRY_ENV_FILE",
+            "HERMES_OPENCLAW_TELEMETRY_BASE_URL",
+            "TELEMETRY_BASE_URL",
+            "HERMES_OPENCLAW_TELEMETRY_TOKEN",
+            "TELEMETRY_TOKEN",
+            "TELEMETRY_WRITE_TOKEN",
+        ):
+            monkeypatch.delenv(key, raising=False)
+        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
 
         config = plugin._get_config()
 

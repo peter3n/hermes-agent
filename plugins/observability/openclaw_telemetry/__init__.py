@@ -6,8 +6,10 @@ fail-open: missing configuration, malformed usage, network failures, and server
 errors are logged at warning/debug level but never raise into the dispatch path.
 
 Configuration is environment-only so hooks do not read Hermes config per call:
-  TELEMETRY_BASE_URL                      e.g. http://10.20.20.20:3001
-  HERMES_OPENCLAW_TELEMETRY_TOKEN         preferred Spark service token
+  HERMES_OPENCLAW_TELEMETRY_ENV_FILE     optional path override
+  HERMES_OPENCLAW_TELEMETRY_BASE_URL     preferred Spark Control endpoint
+  HERMES_OPENCLAW_TELEMETRY_TOKEN        preferred Spark service token
+  TELEMETRY_BASE_URL                     shared fallback endpoint
   TELEMETRY_TOKEN / TELEMETRY_WRITE_TOKEN fallback token names
 
 Optional linkage fields:
@@ -23,8 +25,13 @@ import queue
 import threading
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, Optional
 from urllib import error, request
+
+from dotenv import load_dotenv
+
+from hermes_constants import get_hermes_home
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +45,26 @@ _CONFIG_LOCK = threading.Lock()
 _EVENT_QUEUE: queue.Queue[tuple[Dict[str, Any], Dict[str, Any]]] | None = None
 _QUEUE_LOCK = threading.Lock()
 _WORKER_STARTED = False
+_ENV_FILE_LOADED = False
+
+
+def _load_spark_env_file() -> None:
+    """Load DEV Spark telemetry env from a separate, git-ignored file.
+
+    The gateway systemd unit also imports this file when present, but tests and
+    non-systemd launches still need the plugin to discover it before reading
+    config. The default lives under HERMES_HOME so token material never needs to
+    be committed to the repo.
+    """
+    global _ENV_FILE_LOADED
+    if _ENV_FILE_LOADED:
+        return
+    _ENV_FILE_LOADED = True
+
+    configured = os.environ.get("HERMES_OPENCLAW_TELEMETRY_ENV_FILE", "").strip()
+    env_path = Path(configured).expanduser() if configured else get_hermes_home() / "spark-telemetry.env"
+    if env_path.is_file():
+        load_dotenv(env_path, override=False)
 
 
 def _env(name: str, default: str = "") -> str:
@@ -53,9 +80,10 @@ def _first_env(*names: str) -> str:
 
 
 def reset_cache_for_tests() -> None:
-    global _CONFIG, _EVENT_QUEUE, _WORKER_STARTED
+    global _CONFIG, _EVENT_QUEUE, _WORKER_STARTED, _ENV_FILE_LOADED
     with _CONFIG_LOCK:
         _CONFIG = None
+        _ENV_FILE_LOADED = False
     with _QUEUE_LOCK:
         _EVENT_QUEUE = None
         _WORKER_STARTED = False
@@ -79,6 +107,8 @@ def _get_config() -> Optional[Dict[str, Any]]:
             return None
         if isinstance(_CONFIG, dict):
             return _CONFIG
+
+        _load_spark_env_file()
 
         base_url = _first_env("HERMES_OPENCLAW_TELEMETRY_BASE_URL", "TELEMETRY_BASE_URL").rstrip("/")
         token = _first_env(
