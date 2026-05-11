@@ -102,6 +102,16 @@ _EXTRA_ENV_KEYS = frozenset({
     "LANGFUSE_PUBLIC_KEY",
     "LANGFUSE_SECRET_KEY",
     "LANGFUSE_BASE_URL",
+    # OpenClaw telemetry plugin — Spark-specific keys plus shared fallbacks.
+    "HERMES_OPENCLAW_TELEMETRY_ENV_FILE",
+    "HERMES_OPENCLAW_TELEMETRY_BASE_URL",
+    "HERMES_OPENCLAW_TELEMETRY_TOKEN",
+    "HERMES_OPENCLAW_TELEMETRY_TIMEOUT_SECONDS",
+    "HERMES_OPENCLAW_CARD_ID",
+    "HERMES_OPENCLAW_RUN_ID",
+    "TELEMETRY_BASE_URL",
+    "TELEMETRY_TOKEN",
+    "TELEMETRY_WRITE_TOKEN",
 })
 import yaml
 
@@ -1328,6 +1338,14 @@ DEFAULT_CONFIG = {
         # Env scrubbing (strips *_API_KEY, *_TOKEN, *_SECRET, ...) and the
         # tool whitelist apply identically in both modes.
         "mode": "project",
+    },
+
+    # Bundled observability plugins enabled for the DEV Spark fork. The
+    # OpenClaw plugin still runtime-gates on env credentials, so installs
+    # without spark-telemetry.env remain no-op/fail-open.
+    "plugins": {
+        "enabled": ["observability/openclaw_telemetry"],
+        "disabled": [],
     },
 
     # Logging — controls file logging to ~/.hermes/logs/.

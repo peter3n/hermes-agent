@@ -2163,6 +2163,7 @@ Environment="LOGNAME={username}"
 Environment="PATH={sane_path}"
 Environment="VIRTUAL_ENV={venv_dir}"
 Environment="HERMES_HOME={hermes_home}"
+EnvironmentFile=-{hermes_home}/spark-telemetry.env
 Restart=always
 RestartSec=60
 RestartMaxDelaySec=300
@@ -2198,6 +2199,7 @@ WorkingDirectory={working_dir}
 Environment="PATH={sane_path}"
 Environment="VIRTUAL_ENV={venv_dir}"
 Environment="HERMES_HOME={hermes_home}"
+EnvironmentFile=-{hermes_home}/spark-telemetry.env
 Restart=always
 RestartSec=60
 RestartMaxDelaySec=300
