@@ -176,7 +176,7 @@ class TestEventBuilder:
         )
 
         assert event["agentId"] == "spark"
-        assert event["quotaPool"] == "openai_api"
+        assert event["quotaPool"] == "codex_oauth"
         assert event["model"] == "openai/gpt-5.5"
         assert event["inputTokens"] == 123
         assert event["outputTokens"] == 45
@@ -253,7 +253,7 @@ class TestHook:
         assert captured["auth"] == "Bearer spark-token"
         assert captured["timeout"] == 5.0
         assert captured["body"]["agentId"] == "spark"
-        assert captured["body"]["quotaPool"] == "openai_api"
+        assert captured["body"]["quotaPool"] == "codex_oauth"
         assert captured["body"]["inputTokens"] == 10
         assert captured["body"]["outputTokens"] == 5
 

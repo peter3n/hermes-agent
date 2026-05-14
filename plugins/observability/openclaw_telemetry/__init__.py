@@ -36,7 +36,7 @@ from hermes_constants import get_hermes_home
 logger = logging.getLogger(__name__)
 
 _AGENT_ID = "spark"
-_QUOTA_POOL = "openai_api"
+_QUOTA_POOL = "codex_oauth"
 _DEFAULT_TIMEOUT_SECONDS = 5.0
 _DEFAULT_QUEUE_SIZE = 100
 _INIT_FAILED = object()
